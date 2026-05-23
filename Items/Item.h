@@ -5,7 +5,8 @@ enum class EItemType
 {
     Potion,
     Weapon,
-    Armor
+    Armor,
+    Junk
 };
 
 struct FItem 

@@ -74,12 +74,11 @@ void ACharacter::GainEXP(int ExpAmount)
 
     Stat.CurrentEXP += ExpAmount;
 
-    // 경험치가 100 이상이 되면 누적된 만큼 연속 레벨업이 가능하도록 처리
     while (Stat.CurrentEXP >= Stat.MaxEXP) 
     {
         Stat.CurrentEXP -= Stat.MaxEXP;
         Stat.Level++;
-        
+
         switch (JobClass) 
         {
         case ECharacterClass::Warrior: Stat.MaxHP += 35; Stat.ATK += 4; break;
@@ -89,6 +88,9 @@ void ACharacter::GainEXP(int ExpAmount)
         case ECharacterClass::Priest:  Stat.MaxHP += 22; Stat.ATK += 3; Stat.MaxMP += 12; break;
         default: break;
         }
+        
+        // 💡 기획 반영: 레벨이 오를수록 요구 경험치량 증가 (예: 2레벨은 200, 3레벨은 300 필요)
+        Stat.MaxEXP = Stat.Level * 100; 
         
         Stat.CurrentHP = Stat.MaxHP;
         Stat.CurrentMP = Stat.MaxMP;

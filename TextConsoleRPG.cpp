@@ -1,6 +1,9 @@
+#include "Core/AGameMode.h"
 
-int main(int argc, char* argv[])
+int main() 
 {
+    AGameMode GameMode;
+    GameMode.StartGame();
     
     return 0;
 }

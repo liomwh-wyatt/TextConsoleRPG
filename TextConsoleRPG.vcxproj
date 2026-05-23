@@ -94,6 +94,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,6 +110,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,6 +128,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,6 +148,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,7 +158,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Core\AGameMode.cpp" />
+    <ClCompile Include="Core\UBattleManager.cpp" />
+    <ClCompile Include="Data\GameDatabase.cpp" />
+    <ClCompile Include="Entities\ACharacter.cpp" />
+    <ClCompile Include="Entities\Monster.cpp" />
+    <ClCompile Include="Entities\PlayerJobs.cpp" />
     <ClCompile Include="TextConsoleRPG.cpp" />
+    <ClCompile Include="UI\URenderManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\AGameMode.h" />
+    <ClInclude Include="Core\UBattleManager.h" />
+    <ClInclude Include="Data\GameDatabase.h" />
+    <ClInclude Include="Data\StringTable.h" />
+    <ClInclude Include="Data\UIConfig.h" />
+    <ClInclude Include="Entities\ACharacter.h" />
+    <ClInclude Include="Entities\Monster.h" />
+    <ClInclude Include="Entities\PlayerJobs.h" />
+    <ClInclude Include="Items\Item.h" />
+    <ClInclude Include="UI\URenderManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

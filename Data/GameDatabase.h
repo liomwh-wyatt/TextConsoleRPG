@@ -10,6 +10,13 @@ struct FMonsterData
     int MaxHP;
     int ATK;
     int Speed;
+    
+    int RewardGoldMin;        
+    int RewardGoldMax;        
+    int RewardEXP;            
+    std::string DropItemName; 
+    int DropItemPrice;
+    int DropChance;
 };
 
 namespace FGameDatabase 

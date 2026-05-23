@@ -469,38 +469,7 @@ void AGameMode::RunBlacksmithState()
     }
     else if (InputChoice == 0) CurrentState = EGameState::Town;
 }
-    /*
-    URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::Blacksmith_Welcome;
-    URenderManager::MoveCursor(TX, TY + 1); std::cout << "보유 골드: \x1b[33m" << PartyGold << " G\x1b[0m"; 
-    URenderManager::MoveCursor(TX, TY + 3); std::cout << "[1] 낡은 철검 (30G)";
-    URenderManager::MoveCursor(TX, TY + 4); std::cout << "[2] 가죽 조끼 (30G)";
 
-    URenderManager::MoveCursor(IX, IY);     std::cout << "[ 대장간 ]";
-    URenderManager::MoveCursor(IX, IY + 2); std::cout << "상품 번호 (1~2)";
-    URenderManager::MoveCursor(IX, IY + 3); std::cout << "[0] 나가기"; // 3을 0으로 변경
-    URenderManager::MoveCursor(IX, IY + 5); std::cout << "입력: ";
-    
-    int InputChoice;
-    std::cin >> InputChoice;
-
-    if (InputChoice >= 1 && InputChoice <= 2) 
-    {
-        int ItemPrice = 30;
-        FItem NewItem = (InputChoice == 1) ? FItem{"낡은 철검", EItemType::Weapon, 10, 30, "공격력 +10"} 
-                                           : FItem{"가죽 조끼", EItemType::Armor, 50, 30, "최대 체력 +50"};
-
-        if (PartyGold >= ItemPrice) 
-        {
-            PartyGold -= ItemPrice;
-            Inventory.push_back(NewItem);
-            URenderManager::MoveCursor(IX, IY + 7); std::cout << "구매 완료!";
-        }
-        else { URenderManager::MoveCursor(IX, IY + 7); std::cout << "\x1b[31m골드 부족!\x1b[0m"; }
-        Sleep(1000);
-    }
-    else if (InputChoice == 0) CurrentState = EGameState::Town;
-}
-*/
 void AGameMode::RunDungeonState() 
 {
     URenderManager::ClearDialogArea();
@@ -513,18 +482,16 @@ void AGameMode::RunDungeonState()
     std::cout << "어두컴컴한 던전 깊은 곳으로 진입합니다...";
     Sleep(1500);
 
-    // 💡 데이터베이스에서 무작위 몬스터 정보를 하나 골라옵니다.
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> MobDist(0, static_cast<int>(FGameDatabase::DungeonMonsters.size()) - 1);
     
+    // 전투할 몬스터 데이터 로드
     const FMonsterData& RandomMobData = FGameDatabase::DungeonMonsters[MobDist(gen)];
-
-    // 골라온 데이터를 기반으로 몬스터 객체 생성!
     AMonster* EnemyMob = new AMonster(RandomMobData.Name, RandomMobData.MaxHP, RandomMobData.ATK, RandomMobData.Speed);
 
     bool bIsVictory = UBattleManager::RunAutoBattle(PlayerParty, EnemyMob);
-    delete EnemyMob;
+    delete EnemyMob; 
 
     if (bIsVictory) 
     {
@@ -532,16 +499,33 @@ void AGameMode::RunDungeonState()
         URenderManager::MoveCursor(TX, TY);
         std::cout << "\x1b[32m[ 던전 정찰 토벌 완료! ]\x1b[0m";
 
-        int RewardGold = 60;
-        int RewardEXP = 50;
+        // 💡 1. 랜덤 골드 계산 (최소치 ~ 최대치 사이)
+        std::uniform_int_distribution<int> GoldDist(RandomMobData.RewardGoldMin, RandomMobData.RewardGoldMax);
+        int RewardGold = GoldDist(gen);
+        int RewardEXP = RandomMobData.RewardEXP;
         PartyGold += RewardGold;
+
+        // 💡 2. 확률형 잡템 드랍 계산 (1~100 사이의 난수를 뽑아 드랍 확률과 비교)
+        std::uniform_int_distribution<int> DropDist(1, 100);
+        bool bDropped = (DropDist(gen) <= RandomMobData.DropChance);
 
         URenderManager::MoveCursor(TX, TY + 2);
         std::cout << "획득 전리품 골드: \x1b[33m+" << RewardGold << " G\x1b[0m";
         URenderManager::MoveCursor(TX, TY + 3);
         std::cout << "파티원 획득 경험치: \x1b[32m+" << RewardEXP << " EXP\x1b[0m";
 
+        // 잡템이 드랍되었다면 인벤토리에 추가하고 메시지 출력
         int PrintLine = TY + 5;
+        if (bDropped) 
+        {
+            FItem JunkItem = { RandomMobData.DropItemName, EItemType::Junk, 0, RandomMobData.DropItemPrice, "상점에 팔기 좋은 잡템" };
+            Inventory.push_back(JunkItem);
+            
+            URenderManager::MoveCursor(TX, TY + 4);
+            std::cout << "획득 전리품 아이템: \x1b[36m" << JunkItem.Name << "\x1b[0m";
+            PrintLine = TY + 6; // 로그가 겹치지 않게 레벨업 텍스트 출력 위치를 한 칸 내림
+        }
+
         for (ACharacter* Member : PlayerParty) 
         {
             if (Member != nullptr && !Member->IsDead()) 
@@ -558,8 +542,6 @@ void AGameMode::RunDungeonState()
         }
         Sleep(3000);
         URenderManager::DrawDefaultBackground(); 
-
-        // 💡 버그 픽스: 무사히 귀환했으므로, 주점의 대기열을 새로운 용병들로 물갈이합니다!
         GenerateTavernRoster();
 
         CurrentState = EGameState::Town; 

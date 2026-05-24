@@ -7,7 +7,7 @@ namespace FStringTable
     constexpr std::string_view System_GameOver = "용사는 쓰러졌습니다... 게임 오버.";
 
     constexpr std::string_view Town_Greeting = "마을에 오신 것을 환영합니다. 어디로 이동하시겠습니까?";
-    constexpr std::string_view Town_Menu = "[1] 주점  [2] 물약 상점  [3] 대장간  [4] 던전 입구";
+    constexpr std::string_view Town_Menu = "[1] 주점  [2] 물약 상점  [3] 대장간  [4] 던전 입구  [5] 인벤토리";
     
     constexpr std::string_view Battle_Encounter = "야생의 몬스터가 나타났다!";
  

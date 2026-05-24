@@ -85,7 +85,8 @@ void URenderManager::DrawPartyStatus(const std::vector<ACharacter*>& Party)
         std::string Color = Member->GetClassColor();
 
         MoveCursor(StartX, StartY);
-        std::cout << Color << "[Lv." << Stat.Level << "]" << Member->GetPersonalityName() << " " << Member->GetName() << " (" << Member->GetJobName() << ")\x1b[0m       ";
+        // 끝에 있던 "       " 공백 제거
+        std::cout << Color << "[Lv." << Stat.Level << "]" << Member->GetPersonalityName() << " " << Member->GetName() << " (" << Member->GetJobName() << ")\x1b[0m";
         
         int ExpPieces = (Stat.MaxEXP > 0) ? static_cast<int>((static_cast<float>(Stat.CurrentEXP) / Stat.MaxEXP) * 10) : 0;
         int HPPieces = (Stat.MaxHP > 0) ? static_cast<int>((static_cast<float>(Stat.CurrentHP) / Stat.MaxHP) * 10) : 0;
@@ -94,21 +95,24 @@ void URenderManager::DrawPartyStatus(const std::vector<ACharacter*>& Party)
         MoveCursor(StartX, StartY + 1);
         std::cout << "[EXP][";
         for (int k = 0; k < 10; ++k) std::cout << (k < ExpPieces ? "■" : "□");
-        std::cout << "](" << Stat.CurrentEXP << "/" << Stat.MaxEXP << ")       ";
+        std::cout << "](" << Stat.CurrentEXP << "/" << Stat.MaxEXP << ")"; // 공백 제거
 
         MoveCursor(StartX, StartY + 2);
         std::cout << "[HP][";
         for (int k = 0; k < 10; ++k) std::cout << (k < HPPieces ? "■" : "□");
-        std::cout << "](" << Stat.CurrentHP << "/" << Stat.MaxHP << ")       ";
+        std::cout << "](" << Stat.CurrentHP << "/" << Stat.MaxHP << ")"; // 공백 제거
 
         MoveCursor(StartX, StartY + 3);
         std::cout << "[MP][";
         for (int k = 0; k < 10; ++k) std::cout << (k < MPPieces ? "■" : "□");
-        std::cout << "](" << Stat.CurrentMP << "/" << Stat.MaxMP << ")       ";
+        std::cout << "](" << Stat.CurrentMP << "/" << Stat.MaxMP << ")"; // 공백 제거
         
         MoveCursor(StartX, StartY + 4);
-        std::cout << "공격력: " << Stat.ATK << " | 스피드: " << Stat.Speed << "      ";
+        std::cout << "공격력: " << Stat.ATK << " | 스피드: " << Stat.Speed; // 공백 제거
 
+        MoveCursor(StartX, StartY + 5);
+        std::cout << "\x1b[90m무기: " << Member->GetWeaponName() << " | 방어구: " << Member->GetArmorName() << "\x1b[0m";
+        
         StartY += 6; 
     }
 }

@@ -46,6 +46,7 @@ void AGameMode::StartGame()
         case EGameState::Blacksmith: RunBlacksmithState(); break;
         case EGameState::Dungeon: RunDungeonState(); break;
         case EGameState::GameOver: bIsGameRunning = false; break;
+        case EGameState::Inventory: RunInventoryState(); break;
         }
     }
 }
@@ -185,6 +186,7 @@ void AGameMode::RunTownState()
     case 2: CurrentState = EGameState::PotionShop; break;
     case 3: CurrentState = EGameState::Blacksmith; break;
     case 4: CurrentState = EGameState::Dungeon; break;
+    case 5: CurrentState = EGameState::Inventory; break;
     }
 }
 
@@ -385,89 +387,155 @@ void AGameMode::RunManageCompanionsState()
 
 void AGameMode::RunPotionShopState() 
 {
-    URenderManager::ClearDialogArea();
-    URenderManager::ClearActionArea();
+    bool bShopping = true;
     int TX = FUIConfig::TextStartX;
     int TY = FUIConfig::TextStartY;
     int IX = FUIConfig::InputStartX;
     int IY = FUIConfig::InputStartY;
 
-    URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::PotionShop_Welcome;
-    URenderManager::MoveCursor(TX, TY + 1); std::cout << "보유 골드: \x1b[33m" << PartyGold << " G\x1b[0m"; 
-    
-    for (size_t i = 0; i < FGameDatabase::PotionShopItems.size(); ++i) 
+    while (bShopping) 
     {
-        const FItem& Item = FGameDatabase::PotionShopItems[i];
-        URenderManager::MoveCursor(TX, TY + 3 + static_cast<int>(i));
-        std::cout << "[" << i + 1 << "] " << Item.Name << " (" << Item.Price << "G) - " << Item.Description;
-    }
+        URenderManager::ClearDialogArea();
+        URenderManager::ClearActionArea();
+        URenderManager::DrawInventory(Inventory, PartyGold); // 자본 변동 실시간 반영
 
-    URenderManager::MoveCursor(IX, IY);     std::cout << "[ 물약 상점 ]";
-    URenderManager::MoveCursor(IX, IY + 2); std::cout << "상품 번호 (1~" << FGameDatabase::PotionShopItems.size() << ")";
-    URenderManager::MoveCursor(IX, IY + 3); std::cout << "[0] 나가기"; 
-    URenderManager::MoveCursor(IX, IY + 5); std::cout << "입력: ";
-    
-    int InputChoice;
-    std::cin >> InputChoice;
-    
-    if (InputChoice >= 1 && InputChoice <= static_cast<int>(FGameDatabase::PotionShopItems.size())) 
-    {
-        FItem SelectedItem = FGameDatabase::PotionShopItems[InputChoice - 1];
-
-        if (PartyGold >= SelectedItem.Price) 
+        URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::PotionShop_Welcome;
+        URenderManager::MoveCursor(TX, TY + 1); std::cout << "보유 골드: \x1b[33m" << PartyGold << " G\x1b[0m"; 
+        
+        for (size_t i = 0; i < FGameDatabase::PotionShopItems.size(); ++i) 
         {
-            PartyGold -= SelectedItem.Price;
-            Inventory.push_back(SelectedItem);
-            URenderManager::MoveCursor(IX, IY + 7); std::cout << "구매 완료!";
+            const FItem& Item = FGameDatabase::PotionShopItems[i];
+            URenderManager::MoveCursor(TX, TY + 3 + static_cast<int>(i));
+            std::cout << "[" << i + 1 << "] " << Item.Name << " (" << Item.Price << "G) - " << Item.Description;
         }
-        else { URenderManager::MoveCursor(IX, IY + 7); std::cout << "\x1b[31m골드 부족!\x1b[0m"; }
-        Sleep(1000);
+
+        URenderManager::MoveCursor(IX, IY);     std::cout << "[ 물약 상점 ]";
+        URenderManager::MoveCursor(IX, IY + 2); std::cout << "[1] 아이템 구매";
+        URenderManager::MoveCursor(IX, IY + 3); std::cout << "[2] 아이템 판매";
+        URenderManager::MoveCursor(IX, IY + 4); std::cout << "[0] 나가기"; 
+        URenderManager::MoveCursor(IX, IY + 6); std::cout << "입력: ";
+        
+        int Action; std::cin >> Action;
+
+        if (Action == 0) bShopping = false;
+        else if (Action == 1) // 구매 모드
+        {
+            URenderManager::MoveCursor(IX, IY + 8); std::cout << "상품 번호: ";
+            int BuyIdx; std::cin >> BuyIdx;
+            
+            if (BuyIdx >= 1 && BuyIdx <= static_cast<int>(FGameDatabase::PotionShopItems.size())) 
+            {
+                FItem Selected = FGameDatabase::PotionShopItems[BuyIdx - 1];
+                if (PartyGold >= Selected.Price) 
+                {
+                    PartyGold -= Selected.Price;
+                    Inventory.push_back(Selected);
+                    URenderManager::MoveCursor(IX, IY + 10); std::cout << "구매 완료!";
+                }
+                else { URenderManager::MoveCursor(IX, IY + 10); std::cout << "\x1b[31m골드 부족!\x1b[0m"; }
+                Sleep(800);
+            }
+        }
+        else if (Action == 2) // 판매 모드 (60% 원칙 적용)
+        {
+            URenderManager::ClearDialogArea();
+            URenderManager::MoveCursor(TX, TY); std::cout << "\x1b[36m[ 판매할 아이템을 선택하세요 ]\x1b[0m";
+            
+            for (size_t i = 0; i < Inventory.size(); ++i) 
+            {
+                if (i >= 12) break;
+                // 💡 과제 필수 사항: 판매 시 원가의 60%로 환전
+                int SellPrice = static_cast<int>(Inventory[i].Price * 0.6f); 
+                URenderManager::MoveCursor(TX, TY + 2 + static_cast<int>(i));
+                std::cout << "[" << i + 1 << "] " << Inventory[i].Name << " (판매가: \x1b[33m" << SellPrice << "G\x1b[0m)";
+            }
+
+            URenderManager::MoveCursor(IX, IY + 8); std::cout << "판매 번호 (0 취소): ";
+            int SellIdx; std::cin >> SellIdx;
+            
+            if (SellIdx >= 1 && SellIdx <= static_cast<int>(Inventory.size())) 
+            {
+                int SellPrice = static_cast<int>(Inventory[SellIdx - 1].Price * 0.6f);
+                PartyGold += SellPrice;
+                Inventory.erase(Inventory.begin() + (SellIdx - 1)); // 인벤토리에서 삭제
+                
+                URenderManager::MoveCursor(IX, IY + 10); std::cout << "판매 완료 (+" << SellPrice << "G)";
+                Sleep(800);
+            }
+        }
     }
-    else if (InputChoice == 0) CurrentState = EGameState::Town;
+    CurrentState = EGameState::Town;
 }
 
-void AGameMode::RunBlacksmithState() 
-{
-    URenderManager::ClearDialogArea();
-    URenderManager::ClearActionArea();
-    int TX = FUIConfig::TextStartX;
-    int TY = FUIConfig::TextStartY;
-    int IX = FUIConfig::InputStartX;
-    int IY = FUIConfig::InputStartY;
-
-    URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::Blacksmith_Welcome;
-    URenderManager::MoveCursor(TX, TY + 1); std::cout << "보유 골드: \x1b[33m" << PartyGold << " G\x1b[0m"; 
-
-    for (size_t i = 0; i < FGameDatabase::BlacksmithItems.size(); ++i) 
-    {
-        const FItem& Item = FGameDatabase::BlacksmithItems[i];
-        URenderManager::MoveCursor(TX, TY + 3 + static_cast<int>(i));
-        std::cout << "[" << i + 1 << "] " << Item.Name << " (" << Item.Price << "G) - " << Item.Description;
-    }
-
-    URenderManager::MoveCursor(IX, IY);     std::cout << "[ 대장간 ]";
-    URenderManager::MoveCursor(IX, IY + 2); std::cout << "상품 번호 (1~" << FGameDatabase::BlacksmithItems.size() << ")";
-    URenderManager::MoveCursor(IX, IY + 3); std::cout << "[0] 나가기"; 
-    URenderManager::MoveCursor(IX, IY + 5); std::cout << "입력: ";
-    
-    int InputChoice;
-    std::cin >> InputChoice;
-
-    // 💡 입력한 번호가 데이터베이스 크기 안에 있다면 동적으로 구매 처리!
-    if (InputChoice >= 1 && InputChoice <= static_cast<int>(FGameDatabase::BlacksmithItems.size())) 
-    {
-        FItem SelectedItem = FGameDatabase::BlacksmithItems[InputChoice - 1]; // 선택한 아이템 가져오기
-
-        if (PartyGold >= SelectedItem.Price) 
-        {
-            PartyGold -= SelectedItem.Price;
-            Inventory.push_back(SelectedItem);
-            URenderManager::MoveCursor(IX, IY + 7); std::cout << "구매 완료!";
+void AGameMode::RunBlacksmithState() {  
+    bool bShopping = true;  
+    int TX = FUIConfig::TextStartX;  
+    int TY = FUIConfig::TextStartY;  
+    int IX = FUIConfig::InputStartX;  
+    int IY = FUIConfig::InputStartY;  
+  
+    while (bShopping)   
+    {  
+        URenderManager::ClearDialogArea();  
+        URenderManager::ClearActionArea();  
+        URenderManager::DrawInventory(Inventory, PartyGold); // 자본 변동 실시간 반영  
+  
+        URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::Blacksmith_Welcome;  
+        URenderManager::MoveCursor(TX, TY + 1); std::cout << "보유 골드: \x1b[33m" << PartyGold << " G\x1b[0m";   
+          
+for (size_t i = 0; i < FGameDatabase::BlacksmithItems.size(); ++i)   
+        {  
+            const FItem& Item = FGameDatabase::BlacksmithItems[i];  
+            URenderManager::MoveCursor(TX, TY + 3 + static_cast<int>(i));  
+            std::cout << "[" << i + 1 << "] " << Item.Name << " (" << Item.Price << "G) - " << Item.Description;  
+        }  
+        URenderManager::MoveCursor(IX, IY);     std::cout << "[ 물약 상점 ]";  
+        URenderManager::MoveCursor(IX, IY + 2); std::cout << "[1] 아이템 구매";  
+        URenderManager::MoveCursor(IX, IY + 3); std::cout << "[2] 아이템 판매";  
+        URenderManager::MoveCursor(IX, IY + 4); std::cout << "[0] 나가기";   
+URenderManager::MoveCursor(IX, IY + 6); std::cout << "입력: ";  
+        int Action; std::cin >> Action;  
+  
+        if (Action == 0) bShopping = false;  
+        else if (Action == 1) // 구매 모드  
+        {  
+            URenderManager::MoveCursor(IX, IY + 8); std::cout << "상품 번호: ";  
+            int BuyIdx; std::cin >> BuyIdx;  
+            if (BuyIdx >= 1 && BuyIdx <= static_cast<int>(FGameDatabase::BlacksmithItems.size()))   
+            {  
+                FItem Selected = FGameDatabase::BlacksmithItems[BuyIdx - 1];  
+                if (PartyGold >= Selected.Price)   
+                {  
+                    PartyGold -= Selected.Price;  
+                    Inventory.push_back(Selected);  
+                    URenderManager::MoveCursor(IX, IY + 10); std::cout << "구매 완료!";  
+                }                else { URenderManager::MoveCursor(IX, IY + 10); std::cout << "\x1b[31m골드 부족!\x1b[0m"; }  
+                Sleep(800);  
+            }        }        else if (Action == 2) // 판매 모드 (60% 원칙 적용)  
+        {  
+            URenderManager::ClearDialogArea();  
+            URenderManager::MoveCursor(TX, TY); std::cout << "\x1b[36m[ 판매할 아이템을 선택하세요 ]\x1b[0m";  
+            for (size_t i = 0; i < Inventory.size(); ++i)   
+            {  
+                if (i >= 12) break;  
+                // 💡 과제 필수 사항: 판매 시 원가의 60%로 환전  
+                int SellPrice = static_cast<int>(Inventory[i].Price * 0.6f);   
+URenderManager::MoveCursor(TX, TY + 2 + static_cast<int>(i));  
+                std::cout << "[" << i + 1 << "] " << Inventory[i].Name << " (판매가: \x1b[33m" << SellPrice << "G\x1b[0m)";  
+            }  
+            URenderManager::MoveCursor(IX, IY + 8); std::cout << "판매 번호 (0 취소): ";  
+            int SellIdx; std::cin >> SellIdx;  
+            if (SellIdx >= 1 && SellIdx <= static_cast<int>(Inventory.size()))   
+            {  
+                int SellPrice = static_cast<int>(Inventory[SellIdx - 1].Price * 0.6f);  
+                PartyGold += SellPrice;  
+                Inventory.erase(Inventory.begin() + (SellIdx - 1)); // 인벤토리에서 삭제  
+                URenderManager::MoveCursor(IX, IY + 10); std::cout << "판매 완료 (+" << SellPrice << "G)";  
+                Sleep(800);  
+            }
         }
-        else { URenderManager::MoveCursor(IX, IY + 7); std::cout << "\x1b[31m골드 부족!\x1b[0m"; }
-        Sleep(1000);
     }
-    else if (InputChoice == 0) CurrentState = EGameState::Town;
+    CurrentState = EGameState::Town;  
 }
 
 void AGameMode::RunDungeonState() 
@@ -550,4 +618,89 @@ void AGameMode::RunDungeonState()
     {
         CurrentState = EGameState::GameOver; 
     }
+}
+
+void AGameMode::RunInventoryState() 
+{
+    bool bManaging = true;
+    int TX = FUIConfig::TextStartX;
+    int TY = FUIConfig::TextStartY;
+    int IX = FUIConfig::InputStartX;
+    int IY = FUIConfig::InputStartY;
+
+    while (bManaging) 
+    {
+        URenderManager::ClearDialogArea();
+        URenderManager::ClearActionArea();
+        URenderManager::DrawPartyStatus(PlayerParty); // 장비 변동 실시간 반영
+        URenderManager::DrawInventory(Inventory, PartyGold); // 아이템 소모 실시간 반영
+
+        URenderManager::MoveCursor(TX, TY);
+        std::cout << "\x1b[36m[ 인벤토리 아이템 목록 ]\x1b[0m";
+        
+        for (size_t i = 0; i < Inventory.size(); ++i) 
+        {
+            // 공간이 부족하면 생략
+            if (i >= 12) { URenderManager::MoveCursor(TX, TY + 2 + 12); std::cout << "..."; break; }
+            URenderManager::MoveCursor(TX, TY + 2 + static_cast<int>(i));
+            std::cout << "[" << i + 1 << "] " << Inventory[i].Name << " (" << Inventory[i].Description << ")";
+        }
+
+        URenderManager::MoveCursor(IX, IY);     std::cout << "[ 아이템 사용/장착 ]";
+        URenderManager::MoveCursor(IX, IY + 2); std::cout << "아이템 번호 선택";
+        URenderManager::MoveCursor(IX, IY + 3); std::cout << "[0] 마을로 귀환";
+        URenderManager::MoveCursor(IX, IY + 5); std::cout << "입력: ";
+        
+        int ItemIdx; std::cin >> ItemIdx;
+
+        if (ItemIdx == 0) bManaging = false;
+        else if (ItemIdx >= 1 && ItemIdx <= static_cast<int>(Inventory.size())) 
+        {
+            FItem SelectedItem = Inventory[ItemIdx - 1];
+            
+            if (SelectedItem.Type == EItemType::Junk) 
+            {
+                URenderManager::MoveCursor(IX, IY + 7); std::cout << "\x1b[31m이 아이템은 사용할 수 없습니다.\x1b[0m"; Sleep(1000);
+            }
+            else 
+            {
+                URenderManager::ClearActionArea();
+                URenderManager::MoveCursor(IX, IY);     std::cout << "[ " << SelectedItem.Name << " ]";
+                URenderManager::MoveCursor(IX, IY + 2); std::cout << "누가 사용할까요?";
+                URenderManager::MoveCursor(IX, IY + 3); std::cout << "파티원 번호 (1~" << PlayerParty.size() << ")";
+                URenderManager::MoveCursor(IX, IY + 4); std::cout << "[0] 취소";
+                URenderManager::MoveCursor(IX, IY + 6); std::cout << "입력: ";
+                
+                int TargetIdx; std::cin >> TargetIdx;
+                
+                if (TargetIdx >= 1 && TargetIdx <= static_cast<int>(PlayerParty.size())) 
+                {
+                    ACharacter* Target = PlayerParty[TargetIdx - 1];
+                    
+                    if (Target->IsDead()) 
+                    {
+                        URenderManager::MoveCursor(IX, IY + 8); std::cout << "\x1b[31m전사한 동료입니다!\x1b[0m"; Sleep(1000);
+                    }
+                    else 
+                    {
+                        if (SelectedItem.Type == EItemType::Potion) 
+                        {
+                            Target->UsePotion(SelectedItem.StatValue);
+                            Inventory.erase(Inventory.begin() + (ItemIdx - 1)); // 포션 소모
+                            URenderManager::MoveCursor(IX, IY + 8); std::cout << "포션 사용 완료!";
+                        }
+                        else // 무기나 방어구 장착
+                        {
+                            FItem OldItem = Target->EquipItem(SelectedItem);
+                            Inventory.erase(Inventory.begin() + (ItemIdx - 1)); // 새 장비는 인벤에서 제거
+                            if (!OldItem.Name.empty()) Inventory.push_back(OldItem); // 벗은 장비는 인벤으로 환원
+                            URenderManager::MoveCursor(IX, IY + 8); std::cout << "장비 장착 완료!";
+                        }
+                        Sleep(800);
+                    }
+                }
+            }
+        }
+    }
+    CurrentState = EGameState::Town;
 }

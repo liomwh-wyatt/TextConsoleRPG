@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "../Items/Item.h"
 
 enum class ECharacterClass 
 {
@@ -42,13 +43,23 @@ public:
     std::string GetClassColor() const;
     std::string GetJobName() const;
     std::string GetPersonalityName() const;
+    
+    FItem EquipItem(FItem NewItem);
+    void UsePotion(int HealAmount);
+    
+    std::string GetWeaponName() const;
+    std::string GetArmorName() const;
 
 protected:
+    
     std::string Name;
     ECharacterClass JobClass;
     EPersonality Personality;
     FCharacterStat Stat;
 
+    FItem EquippedWeapon = { "", EItemType::Weapon, 0, 0, "" };
+    FItem EquippedArmor  = { "", EItemType::Armor, 0, 0, "" };
+    
     void SetBaseStats();
     void ApplyPersonalityBonus();
 };

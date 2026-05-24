@@ -68,7 +68,8 @@ void ACharacter::AddWaitTime(int TimeAmount)
     Stat.CurrentWait += TimeAmount;
 }
 
-void ACharacter::GainEXP(int ExpAmount) 
+void ACharacter::GainEXP(int ExpAmount)
+
 {
     if (IsDead()) return;
 
@@ -143,3 +144,41 @@ std::string ACharacter::GetPersonalityName() const
     default: return "평범한";
     }
 }
+
+FItem ACharacter::EquipItem(FItem NewItem) 
+{
+    FItem OldItem = { "", EItemType::Junk, 0, 0, "" }; // 비어있는 기본 아이템 반환용
+
+    if (NewItem.Type == EItemType::Weapon) 
+    {
+        if (!EquippedWeapon.Name.empty()) 
+        {
+            Stat.ATK -= EquippedWeapon.StatValue; // 기존 무기 스탯 회수
+            OldItem = EquippedWeapon;             // 인벤토리로 돌려보낼 옛날 무기 저장
+        }
+        EquippedWeapon = NewItem;
+        Stat.ATK += EquippedWeapon.StatValue;     // 새 무기 스탯 적용
+    }
+    else if (NewItem.Type == EItemType::Armor) 
+    {
+        if (!EquippedArmor.Name.empty()) 
+        {
+            Stat.MaxHP -= EquippedArmor.StatValue;
+            Stat.CurrentHP = std::min(Stat.CurrentHP, Stat.MaxHP); // 최대 체력이 깎이면 현재 체력도 비율에 맞게 깎임
+            OldItem = EquippedArmor;
+        }
+        EquippedArmor = NewItem;
+        Stat.MaxHP += EquippedArmor.StatValue;
+        Stat.CurrentHP += EquippedArmor.StatValue; // 새 방어구를 입으면 체력도 그만큼 즉시 펌핑
+    }
+
+    return OldItem; // 장착 해제된 아이템 반환 (인벤토리에 다시 넣기 위함)
+}
+
+void ACharacter::UsePotion(int HealAmount) 
+{
+    Heal(HealAmount);
+}
+
+std::string ACharacter::GetWeaponName() const { return EquippedWeapon.Name.empty() ? "없음" : EquippedWeapon.Name; }
+std::string ACharacter::GetArmorName() const  { return EquippedArmor.Name.empty() ? "없음" : EquippedArmor.Name; }

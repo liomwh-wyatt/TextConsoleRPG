@@ -45,6 +45,8 @@ void AGameMode::StartGame()
         case EGameState::PotionShop: RunPotionShopState(); break;
         case EGameState::Blacksmith: RunBlacksmithState(); break;
         case EGameState::Dungeon: RunDungeonState(); break;
+        case EGameState::Boss: RunBossState(); break;
+        case EGameState::Ending: RunEndingState(); break;
         case EGameState::GameOver: bIsGameRunning = false; break;
         case EGameState::Inventory: RunInventoryState(); break;
         }
@@ -170,9 +172,20 @@ void AGameMode::RunTownState()
     int IX = FUIConfig::InputStartX;
     int IY = FUIConfig::InputStartY;
 
-    URenderManager::MoveCursor(TX, TY);     std::cout << FStringTable::System_InitTown;
-    URenderManager::MoveCursor(TX, TY + 1); std::cout << FStringTable::Town_Greeting;
-    URenderManager::MoveCursor(TX, TY + 2); std::cout << FStringTable::Town_Menu;
+    // 💡 주인공(PlayerParty[0])의 레벨이 10 이상인지 검사합니다.
+    bool bIsBossOpen = (!PlayerParty.empty() && PlayerParty[0]->GetStat().Level >= 10);
+
+    URenderManager::MoveCursor(TX, TY);     
+    std::cout << FStringTable::System_InitTown;
+
+    // 레벨에 따라 마을의 멘트와 메뉴가 극적으로 변합니다.
+    URenderManager::MoveCursor(TX, TY + 1); 
+    if (bIsBossOpen) std::cout << FStringTable::Town_Greeting_Boss;
+    else             std::cout << FStringTable::Town_Greeting;
+
+    URenderManager::MoveCursor(TX, TY + 2); 
+    if (bIsBossOpen) std::cout << FStringTable::Town_Menu_Boss;
+    else             std::cout << FStringTable::Town_Menu;
 
     URenderManager::MoveCursor(IX, IY);     std::cout << "[ 이동할 장소 ]";
     URenderManager::MoveCursor(IX, IY + 2); std::cout << "입력: ";
@@ -187,6 +200,9 @@ void AGameMode::RunTownState()
     case 3: CurrentState = EGameState::Blacksmith; break;
     case 4: CurrentState = EGameState::Dungeon; break;
     case 5: CurrentState = EGameState::Inventory; break;
+    case 6: // 💡 10레벨 이상일 때만 6번 입력 활성화
+        if (bIsBossOpen) CurrentState = EGameState::Boss; 
+        break;
     }
 }
 
@@ -703,4 +719,54 @@ void AGameMode::RunInventoryState()
         }
     }
     CurrentState = EGameState::Town;
+}
+
+void AGameMode::RunBossState() 
+{
+    URenderManager::ClearDialogArea();
+    URenderManager::ClearActionArea();
+    
+    int TX = FUIConfig::TextStartX;
+    int TY = FUIConfig::TextStartY;
+    
+    URenderManager::MoveCursor(TX, TY);
+    std::cout << "\x1b[31m마왕성의 육중한 문을 열고 진입합니다... 결전의 시간입니다!\x1b[0m";
+    Sleep(2000);
+
+    // 보스 객체 생성
+    AMonster* Boss = new AMonster(FGameDatabase::FinalBoss.Name, FGameDatabase::FinalBoss.MaxHP, FGameDatabase::FinalBoss.ATK, FGameDatabase::FinalBoss.Speed);
+
+    bool bIsVictory = UBattleManager::RunAutoBattle(PlayerParty, Boss, Inventory);
+    delete Boss; 
+
+    if (bIsVictory) 
+    {
+        CurrentState = EGameState::Ending; 
+    }
+    else 
+    {
+        CurrentState = EGameState::GameOver; 
+    }
+}
+
+void AGameMode::RunEndingState() 
+{
+    URenderManager::ClearScreen();
+    int VX = FUIConfig::ViewportX + 10;
+    int VY = FUIConfig::ViewportY + 10;
+    
+    URenderManager::MoveCursor(VX, VY);
+    std::cout << "\x1b[33m" << FStringTable::Ending_Epilogue << "\x1b[0m";
+    
+    URenderManager::MoveCursor(VX, VY + 2);
+    std::cout << "플레이해주셔서 감사합니다. - " << PlayerParty[0]->GetName() << "의 모험 끝 -";
+
+    URenderManager::MoveCursor(VX, VY + 5);
+    std::cout << "게임을 종료하려면 아무 숫자나 입력하고 Enter를 누르세요: ";
+    
+    int AnyKey;
+    std::cin >> AnyKey;
+
+    // 시스템에 종료 신호를 보내 게임 루프를 파괴합니다.
+    CurrentState = EGameState::GameOver; 
 }

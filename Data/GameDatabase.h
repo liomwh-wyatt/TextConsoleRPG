@@ -26,4 +26,6 @@ namespace FGameDatabase
     extern const std::vector<FItem> PotionShopItems;
     extern const std::vector<FItem> BlacksmithItems;
     extern const std::vector<FMonsterData> DungeonMonsters;
+    
+    extern const FMonsterData FinalBoss;
 }

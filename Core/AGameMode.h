@@ -6,7 +6,7 @@ class ACharacter;
 
 enum class EGameState 
 {
-    Town, Tavern, ManageCompanions, PotionShop, Blacksmith, Inventory, Dungeon, GameOver
+    Town, Tavern, ManageCompanions, PotionShop, Blacksmith, Inventory, Dungeon, Boss, Ending, GameOver
 };
 
 class AGameMode 
@@ -37,4 +37,6 @@ private:
     void RunBlacksmithState();
     void RunDungeonState();
     void RunInventoryState();
+    void RunBossState();
+    void RunEndingState();
 };

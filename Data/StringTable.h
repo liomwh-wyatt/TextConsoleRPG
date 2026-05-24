@@ -9,6 +9,10 @@ namespace FStringTable
     constexpr std::string_view Town_Greeting = "마을에 오신 것을 환영합니다. 어디로 이동하시겠습니까?";
     constexpr std::string_view Town_Menu = "[1] 주점  [2] 물약 상점  [3] 대장간  [4] 던전 입구  [5] 인벤토리";
     
+    constexpr std::string_view Town_Greeting_Boss = "\x1b[31m[ 핏빛 하늘 ] 마을에 무거운 전운이 감돕니다... 마왕의 성문이 열렸습니다!\x1b[0m";
+    constexpr std::string_view Town_Menu_Boss = "[1] 주점  [2] 물약 상점  [3] 대장간  [4] 던전 입구  [5] 인벤토리  \x1b[31m[6] 마왕성 진입 (보스전)\x1b[0m";
+    constexpr std::string_view Ending_Epilogue = "\x1b[36m마왕은 쓰러졌고, 세계는 다시 평화를 되찾았습니다. 당신의 전설은 영원히 기억될 것입니다...\x1b[0m"; 
+    
     constexpr std::string_view Battle_Encounter = "야생의 몬스터가 나타났다!";
  
     constexpr std::string_view Tavern_Welcome = "시끌벅적한 주점에 들어왔습니다. 용병들이 일거리를 찾고 있습니다.";

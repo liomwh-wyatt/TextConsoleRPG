@@ -165,6 +165,7 @@ bool AGameMode::IsInParty(ACharacter* Character)
 
 void AGameMode::RunTownState() 
 {
+    URenderManager::DrawSceneArtwork(0);
     URenderManager::ClearDialogArea();
     URenderManager::ClearActionArea();
     int TX = FUIConfig::TextStartX;
@@ -208,6 +209,7 @@ void AGameMode::RunTownState()
 
 void AGameMode::RunTavernState() 
 {
+    URenderManager::DrawSceneArtwork(1);
     URenderManager::ClearDialogArea();
     URenderManager::ClearActionArea();
     int TX = FUIConfig::TextStartX;
@@ -403,6 +405,7 @@ void AGameMode::RunManageCompanionsState()
 
 void AGameMode::RunPotionShopState() 
 {
+    URenderManager::DrawSceneArtwork(2);
     bool bShopping = true;
     int TX = FUIConfig::TextStartX;
     int TY = FUIConfig::TextStartY;
@@ -484,6 +487,8 @@ void AGameMode::RunPotionShopState()
 }
 
 void AGameMode::RunBlacksmithState() {  
+    
+    URenderManager::DrawSceneArtwork(3);
     bool bShopping = true;  
     int TX = FUIConfig::TextStartX;  
     int TY = FUIConfig::TextStartY;  
@@ -556,6 +561,7 @@ URenderManager::MoveCursor(TX, TY + 2 + static_cast<int>(i));
 
 void AGameMode::RunDungeonState() 
 {
+    URenderManager::DrawSceneArtwork(4);
     URenderManager::ClearDialogArea();
     URenderManager::ClearActionArea();
     
@@ -731,9 +737,20 @@ void AGameMode::RunBossState()
     
     URenderManager::MoveCursor(TX, TY);
     std::cout << "\x1b[31m마왕성의 육중한 문을 열고 진입합니다... 결전의 시간입니다!\x1b[0m";
-    Sleep(2000);
+    Sleep(1500);
 
-    // 보스 객체 생성
+    // 💡 뷰포트를 수학의 힘으로 찢어버리는 순정 콘솔 셰이더 애니메이션 발동!
+    URenderManager::DrawBossIntroAnimation();
+
+    // 연출이 끝났으므로 뷰포트를 지우고 다시 기본 UI 세팅
+    URenderManager::DrawFramework();
+    URenderManager::DrawPartyStatus(PlayerParty);
+    URenderManager::DrawInventory(Inventory, PartyGold);
+    URenderManager::ClearViewport();
+    URenderManager::DrawBossBackground();
+
+    // 보스 객체 생성 및 전투 진입
+    
     AMonster* Boss = new AMonster(FGameDatabase::FinalBoss.Name, FGameDatabase::FinalBoss.MaxHP, FGameDatabase::FinalBoss.ATK, FGameDatabase::FinalBoss.Speed);
 
     bool bIsVictory = UBattleManager::RunAutoBattle(PlayerParty, Boss, Inventory);

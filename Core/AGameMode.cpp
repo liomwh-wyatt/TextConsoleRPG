@@ -558,7 +558,7 @@ void AGameMode::RunDungeonState()
     const FMonsterData& RandomMobData = FGameDatabase::DungeonMonsters[MobDist(gen)];
     AMonster* EnemyMob = new AMonster(RandomMobData.Name, RandomMobData.MaxHP, RandomMobData.ATK, RandomMobData.Speed);
 
-    bool bIsVictory = UBattleManager::RunAutoBattle(PlayerParty, EnemyMob);
+    bool bIsVictory = UBattleManager::RunAutoBattle(PlayerParty, EnemyMob, Inventory);
     delete EnemyMob; 
 
     if (bIsVictory) 

@@ -16,6 +16,9 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
     URenderManager::ClearDialogArea();
     URenderManager::ClearActionArea();
 
+    // 💡 전투가 시작되면 뷰포트에 몬스터의 픽셀 아트 오버레이를 띄웁니다!
+    URenderManager::ShowMonsterArtwork(Enemy->GetName());
+
     URenderManager::MoveCursor(TX, CurrentLine++);
     std::cout << "\x1b[31m[ 전투 돌입! 야생의 " << Enemy->GetName() << "이(가) 나타났다! ]\x1b[0m";
     Sleep(1500);
@@ -54,16 +57,18 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
                 int PreMP = Member->GetStat().CurrentMP;
                 
                 if (Member->GetJobName() == "사제") 
-                {
-                    // 사제는 체력이 가장 낮은 아군을 찾아 힐을 줍니다.
+                {                    
                     ACharacter* TargetAlly = Member;
                     for (ACharacter* Ally : Party) 
                     {
                         if (!Ally->IsDead() && Ally->GetStat().CurrentHP < TargetAlly->GetStat().CurrentHP) TargetAlly = Ally;
                     }
+                    
                     Member->UseSkill(TargetAlly);
+                    
                     if (PreMP > Member->GetStat().CurrentMP) 
                     {
+                        URenderManager::DrawMagicEffect(Member->GetClassColor()); // 스킬 이펙트
                         URenderManager::MoveCursor(TX, CurrentLine++);
                         std::cout << Member->GetClassColor() << Member->GetName() << "\x1b[0m의 스킬 [성스러운 빛] -> " << TargetAlly->GetName() << " 치유!";
                         bActionTaken = true;
@@ -72,9 +77,9 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
                 else 
                 {
                     Member->UseSkill(Enemy);
-                    // 스킬 사용 함수 호출 후 MP가 줄었다면 스킬 성공으로 간주
                     if (PreMP > Member->GetStat().CurrentMP) 
                     {
+                        URenderManager::DrawMagicEffect(Member->GetClassColor()); // 스킬 이펙트
                         URenderManager::MoveCursor(TX, CurrentLine++);
                         std::cout << Member->GetClassColor() << Member->GetName() << "\x1b[0m의 강력한 스킬 공격! -> " << Enemy->GetName() << " 타격!";
                         bActionTaken = true;
@@ -86,12 +91,13 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
             if (!bActionTaken) 
             {
                 Member->UseBasicAttack(Enemy);
+                URenderManager::DrawSlashEffect(); // 💡 기본 공격 이펙트 호출
                 URenderManager::MoveCursor(TX, CurrentLine++);
                 std::cout << Member->GetClassColor() << Member->GetName() << "\x1b[0m의 기본 공격! -> " << Enemy->GetName() << " (남은 HP: " << Enemy->GetStat().CurrentHP << ")";
             }
 
             Sleep(800); 
-            URenderManager::DrawPartyStatus(Party); // 체력/마나 변동 실시간 반영
+            URenderManager::DrawPartyStatus(Party);
 
             if (CurrentLine > FUIConfig::LogY + FUIConfig::LogH - 3) 
             {
@@ -114,6 +120,7 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
         if (ProbDist(gen) <= 30) 
         {
             Target->TakeDamage(static_cast<int>(Enemy->GetStat().ATK * 1.5f)); 
+            URenderManager::DrawMagicEffect("\x1b[31m"); // 💡 적의 빨간색 스킬 이펙트
             URenderManager::MoveCursor(TX, CurrentLine++);
             std::cout << "\x1b[31m" << Enemy->GetName() << "\x1b[0m의 강력한 스킬 공격! -> " 
                       << Target->GetClassColor() << Target->GetName() << "\x1b[0m 큰 타격! (남은 HP: " << Target->GetStat().CurrentHP << ")";
@@ -121,6 +128,7 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
         else 
         {
             Enemy->UseBasicAttack(Target);
+            URenderManager::DrawSlashEffect(); // 💡 적의 기본 공격 이펙트
             URenderManager::MoveCursor(TX, CurrentLine++);
             std::cout << "\x1b[31m" << Enemy->GetName() << "\x1b[0m의 반격! -> " 
                       << Target->GetClassColor() << Target->GetName() << "\x1b[0m 타격! (남은 HP: " << Target->GetStat().CurrentHP << ")";
@@ -139,5 +147,6 @@ bool UBattleManager::RunAutoBattle(std::vector<ACharacter*>& Party, ACharacter* 
     URenderManager::MoveCursor(TX, CurrentLine + 1);
     std::cout << "\x1b[33m전투에서 승리했습니다! " << Enemy->GetName() << " 처치!\x1b[0m";
     Sleep(2000);
+    URenderManager::ClearMonsterArtwork();
     return true; 
 }
